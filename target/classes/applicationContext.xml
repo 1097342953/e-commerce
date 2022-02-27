@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/beans
+        https://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/context
+        https://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/mvc
+        https://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/tx
+        https://www.springframework.org/schema/tx/spring-tx.xsd">
+    <!--    <context:property-placeholder location="classpath:jdbc.properties"/>-->
+
+    <bean class="com.mjj.config.EncryptPropertyPlaceHolderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:jdbc.properties</value>
+            </list>
+        </property>
+    </bean>
+    <!--  Spring注解模式包扫描  @Service @Controller @ Component @Autowired -->
+    <context:component-scan base-package="com.mjj"/>
+    <!--  SpringMVC的注解模式,依赖于Spring的包扫描  -->
+    <mvc:annotation-driven>
+        <mvc:message-converters>
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>text/html;charset=utf-8</value>
+                        <value>application/json;charset=utf-8</value>
+                    </list>
+                </property>
+            </bean>
+
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+    <!-- SpringMVC将静态资源文件,比如图片,css排除在外,提高了SpringMVC处理请求的速度   -->
+    <mvc:default-servlet-handler/>
+
+    <!--将swagger配置类注入-->
+    <bean class="com.mjj.config.SwaggerConfig"/>
+    <!-- 对swagger静态资源放行，不被拦截-->
+    <!--    <mvc:resources mapping="/webjars/**" location="classpath:/META-INF/resources/webjars/"/>-->
+    <!--    <mvc:resources mapping="swagger-ui.html" location="classpath:/META-INF/resources/"/>-->
+
+    <!-- 配置freemarker模板引擎    -->
+    <bean id="freemarkerConfig" class="org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer">
+        <property name="templateLoaderPath" value="/WEB-INF/ftl"/>
+        <property name="freemarkerSettings">
+            <props>
+                <!--
+                    这里的编码是读取ftl文件,采用UTF-8字符集,和请求,响应没关系
+                    <mvc:annotation-driven >是对没有采用模板引擎直接返回数据进行编码配置,例如ajax请求,后台返回
+                    json字符串
+                 -->
+                <prop key="defaultEncoding">UTF-8</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="ViewResolver" class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver">
+        <!--   这里设置的utf-8是对freemarker模板引擎-->
+        <property name="contentType" value="text/html;charset=utf-8"/>
+        <property name="suffix" value=".ftl"/>
+    </bean>
+    <!--    文件上传解析器-->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="UTF-8"/>
+    </bean>
+
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${driverClassName}"/>
+        <property name="url" value="${jdbc_url}"/>
+        <property name="username" value="${jdbc_username}"/>
+        <property name="password" value="${jdbc_password}"/>
+        <property name="initialSize" value="5"/>
+        <property name="maxActive" value="10"/>
+        <property name="filters" value="stat"/>
+    </bean>
+    <!--    <bean class="com.alibaba.druid.filter.stat.StatFilter">-->
+    <!--        <property name="slowSqlMillis" value="500"/>-->
+    <!--    </bean>-->
+
+    <!--    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">-->
+    <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations" value="classpath:/mapper/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+    </bean>
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.mjj.dao"/>
+    </bean>
+
+    <bean id="dataSourceTransactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+
+
+    <tx:annotation-driven transaction-manager="dataSourceTransactionManager"/>
+
+    <mvc:interceptors>
+        <mvc:interceptor>
+            <mvc:mapping path="/**"/>
+            <!--            <mvc:exclude-mapping path="/login"/>-->
+            <mvc:exclude-mapping path="/main"/>
+            <mvc:exclude-mapping path="/checkLogin"/>
+            <mvc:exclude-mapping path="/getList"/>
+<!--            <mvc:exclude-mapping path="/manage"/>-->
+            <mvc:exclude-mapping path="/register"/>
+            <mvc:exclude-mapping path="/register_submit"/>
+            <mvc:exclude-mapping path="/css/**"/>
+            <mvc:exclude-mapping path="/fonts/**"/>
+            <mvc:exclude-mapping path="/images/**"/>
+            <mvc:exclude-mapping path="/js/**"/>
+            <mvc:exclude-mapping path="/swagger-ui.html"/>
+            <mvc:exclude-mapping path="/webjars/**"/>
+            <mvc:exclude-mapping path="/swagger-resources/**"/>
+            <mvc:exclude-mapping path="/v2/**"/>
+            <mvc:exclude-mapping path="/csrf/**"/>
+            <bean class="com.mjj.interceptor.LoginInterceptor" />
+        </mvc:interceptor>
+    </mvc:interceptors>
+
+    <!--
+       allowed-origins:允许哪里来的请求跨域
+       allowed-methods：允许那些方法能跨域
+       allowed-headers：允许请求头和响应头包含哪些可以跨域
+       allow-credentials:是否允许凭证信息，包括证书跨域
+    -->
+    <mvc:cors>
+        <mvc:mapping path="/**" allowed-origins="*" allowed-methods="*" allowed-headers="Content-Type,Access-Control-Allow-Headers,Authorization,X-Request-With" allow-credentials="true"/>
+    </mvc:cors>
+
+</beans>

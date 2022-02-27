@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mjj.dao.ProductDao">
+
+    <resultMap type="com.mjj.entity.Product" id="ProductMap">
+        <result property="proId" column="pro_id" jdbcType="INTEGER"/>
+        <result property="proName" column="pro_name" jdbcType="VARCHAR"/>
+        <result property="price" column="price" jdbcType="NUMERIC"/>
+        <result property="details" column="details" jdbcType="VARCHAR"/>
+        <result property="color" column="color" jdbcType="VARCHAR"/>
+        <result property="quantity" column="quantity" jdbcType="VARCHAR"/>
+        <result property="kind" column="kind" jdbcType="VARCHAR"/>
+        <result property="brand" column="brand" jdbcType="VARCHAR"/>
+        <result property="image" column="image" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!--查询单个-->
+    <select id="queryById" resultMap="ProductMap">
+        select
+          pro_id, pro_name, price, details, color, quantity, kind, brand, image
+        from e_commerce.product
+        where pro_id = #{proId}
+    </select>
+
+    <!--查询指定行数据-->
+    <select id="queryAllByLimit" resultMap="ProductMap">
+        select
+          pro_id, pro_name, price, details, color, quantity, kind, brand, image
+        from e_commerce.product
+        limit #{offset}, #{limit}
+    </select>
+
+    <!--通过实体作为筛选条件查询-->
+    <select id="queryAll" resultMap="ProductMap">
+        select
+        pro_id, pro_name, price, details, color, quantity, kind, brand, image
+        from e_commerce.product
+        <where>
+            <if test="proId != null">
+                and pro_id = #{proId}
+            </if>
+            <if test="proName != null and proName != ''">
+                and pro_name = #{proName}
+            </if>
+            <if test="price != null">
+                and price = #{price}
+            </if>
+            <if test="details != null and details != ''">
+                and details = #{details}
+            </if>
+            <if test="color != null and color != ''">
+                and color = #{color}
+            </if>
+            <if test="quantity != null and quantity != ''">
+                and quantity = #{quantity}
+            </if>
+            <if test="kind != null and kind != ''">
+                and kind = #{kind}
+            </if>
+            <if test="brand != null and brand != ''">
+                and brand = #{brand}
+            </if>
+            <if test="image != null and image != ''">
+                and image = #{image}
+            </if>
+        </where>
+    </select>
+    <select id="queryByName" resultMap="ProductMap">
+        select
+          pro_id, pro_name, price, details, color, quantity, kind, brand, image
+        from e_commerce.product
+        <where>
+            pro_name like concat('%',#{proName},'%')
+        </where>
+    </select>
+
+    <!--新增所有列-->
+    <insert id="insert" keyProperty="proId" useGeneratedKeys="true">
+        insert into e_commerce.product(pro_name, price, details, color, quantity, kind, brand, image)
+        values (#{proName}, #{price}, #{details}, #{color}, #{quantity}, #{kind}, #{brand}, #{image})
+    </insert>
+
+    <insert id="insertBatch" keyProperty="proId" useGeneratedKeys="true">
+        insert into e_commerce.product(pro_name, price, details, color, quantity, kind, brand, image)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.proName}, #{entity.price}, #{entity.details}, #{entity.color}, #{entity.quantity}, #{entity.kind},
+            #{entity.brand}, #{entity.image})
+        </foreach>
+    </insert>
+
+    <insert id="insertOrUpdateBatch" keyProperty="proId" useGeneratedKeys="true">
+        insert into e_commerce.product(pro_name, price, details, color, quantity, kind, brand, image)
+        values
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.proName}, #{entity.price}, #{entity.details}, #{entity.color}, #{entity.quantity}, #{entity.kind},
+            #{entity.brand}, #{entity.image})
+        </foreach>
+        on duplicate key update
+        pro_name = values(pro_name) , price = values(price) , details = values(details) , color = values(color) ,
+        quantity = values(quantity) , kind = values(kind) , brand = values(brand) , image = values(image)
+    </insert>
+
+    <!--通过主键修改数据-->
+    <update id="update">
+        update e_commerce.product
+        <set>
+            <if test="proName != null and proName != ''">
+                pro_name = #{proName},
+            </if>
+            <if test="price != null">
+                price = #{price},
+            </if>
+            <if test="details != null and details != ''">
+                details = #{details},
+            </if>
+            <if test="color != null and color != ''">
+                color = #{color},
+            </if>
+            <if test="quantity != null and quantity != ''">
+                quantity = #{quantity},
+            </if>
+            <if test="kind != null and kind != ''">
+                kind = #{kind},
+            </if>
+            <if test="brand != null and brand != ''">
+                brand = #{brand},
+            </if>
+            <if test="image != null and image != ''">
+                image = #{image},
+            </if>
+        </set>
+        where pro_id = #{proId}
+    </update>
+
+    <!--通过主键删除-->
+    <delete id="deleteById">
+        delete from e_commerce.product where pro_id = #{proId}
+    </delete>
+
+</mapper>
+
